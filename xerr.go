@@ -13,7 +13,7 @@ import (
 
 // HTML templates for the error page
 var errorTemplate = []string{
-	filepath.Join(projectRoot(), "assets", "templates", "error.html"),
+	filepath.Join(packageRoot(), "assets", "templates", "error.html"),
 }
 
 // the executed template to show the error page
@@ -258,7 +258,7 @@ var templateFuncs = template.FuncMap{
 	},
 }
 
-func projectRoot() string {
-	dir, _ := os.Getwd()
-	return dir
+func packageRoot() string {
+	_, file, _, _ := runtime.Caller(0) // path to this source file
+	return filepath.Dir(file)
 }
