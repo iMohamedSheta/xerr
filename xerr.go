@@ -5,6 +5,7 @@ import (
 	"html/template"
 	"net/http"
 	"os"
+	"path/filepath"
 	"runtime"
 	"strings"
 	"time"
@@ -12,7 +13,7 @@ import (
 
 // HTML templates for the error page
 var errorTemplate = []string{
-	"assets/templates/error.html",
+	filepath.Join(projectRoot(), "assets", "templates", "error.html"),
 }
 
 // the executed template to show the error page
@@ -255,4 +256,9 @@ var templateFuncs = template.FuncMap{
 			return 0
 		}
 	},
+}
+
+func projectRoot() string {
+	dir, _ := os.Getwd()
+	return dir
 }
