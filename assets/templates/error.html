@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Server Error</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', (event) => {
+    document.querySelectorAll('.language-go').forEach((block) => {
+        hljs.highlightElement(block);
+    });
+});
+</script>
+
+
+    <style>
+        :root {
+            /* Base Colors */
+            --bg-primary: #ffffff;
+            --bg-secondary: #f8fafc;
+            --bg-tertiary: #f9fafb;
+            --bg-accent: #f3f4f6;
+            
+            /* Text Colors */
+            --text-primary: #1f2937;
+            --text-secondary: #374151;
+            --text-tertiary: #6b7280;
+            --text-muted: #9ca3af;
+            
+            /* Border Colors */
+            --border-light: #f3f4f6;
+            --border-medium: #e5e7eb;
+            --border-dark: #d1d5db;
+            
+            /* Status Colors */
+            --error-bg: #fef2f2;
+            --error-highlight: #fecaca;
+            --error-border: #fecaca;
+            --error-text: #dc2626;
+            --error-accent: #ef4444;
+            
+            --success-bg: #f0fdf4;
+            --success-border: #bbf7d0;
+            --success-text: #166534;
+            --success-accent: #22c55e;
+            
+            --warning-bg: #ffebeb;
+            --warning-border: #fed7aa;
+            --warning-text: #d97706;
+            --warning-accent: #f59e0b;
+            
+            --info-bg: #eff6ff;
+            --info-border: #bfdbfe;
+            --info-text: #2563eb;
+            --info-accent: #3b82f6;
+            
+            /* Interactive Colors */
+            --hover-bg: #f8fafc;
+            --active-bg: var(--error-bg);
+            --active-border: var(--error-accent);
+            
+            /* Code Colors */
+            --code-bg: #fafafa;
+            --code-line-highlight: #d13c3c;
+            --code-line-error: #fee2e2;
+            
+            /* Badge Colors */
+            --badge-primary-bg: #ddd6fe;
+            --badge-primary-text: #5b21b6;
+            --badge-secondary-bg: var(--bg-accent);
+            --badge-secondary-text: var(--text-tertiary);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+            background: var(--bg-secondary);
+            min-height: 100vh;
+            color: var(--text-secondary);
+            font-size: 13px;
+        }
+
+        .container {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background: var(--bg-primary);
+            border-bottom: 1px solid var(--border-medium);
+            padding: 1rem 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            min-height: 60px;
+        }
+
+        .error-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .error-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .error-title i {
+            color: var(--error-accent);
+        }
+
+        .error-badges {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .badge {
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .badge-go {
+            background: var(--badge-primary-bg);
+            color: var(--badge-primary-text);
+        }
+
+        .badge-version {
+            background: var(--badge-secondary-bg);
+            color: var(--badge-secondary-text);
+        }
+
+        .error-subtitle {
+            background: var(--error-bg);
+            color: var(--error-text);
+            padding: 1rem 1.5rem;
+            font-size: 0.95rem;
+            font-weight: 500;
+            border-bottom: 1px solid var(--border-medium);
+            border-left: 4px solid var(--error-accent);
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            min-height: 80px;
+        }
+
+        .error-subtitle::before {
+            content: '';
+            width: 16px;
+            height: 16px;
+            background: var(--error-accent);
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .error-subtitle::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: linear-gradient(180deg, var(--error-accent) 0%, #f87171 100%);
+        }
+
+        .main-content {
+            flex: 1;
+            display: flex;
+            background: var(--bg-primary);
+        }
+
+        .sidebar {
+            width: 350px;
+            background: var(--bg-tertiary);
+            border-right: 1px solid var(--border-medium);
+            overflow-y: auto;
+        }
+
+        .stack-trace-header {
+            background: var(--bg-accent);
+            padding: 0.75rem 1.5rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            border-bottom: 1px solid var(--border-medium);
+        }
+
+        .stack-frames {
+            padding: 0;
+        }
+
+        .frame {
+            border-bottom: 1px solid var(--border-light);
+            cursor: pointer;
+            transition: background-color 0.15s ease;
+            background: var(--bg-primary);
+        }
+
+        .frame:hover {
+            background: var(--hover-bg);
+        }
+
+        .frame.active {
+            background: var(--active-bg);
+            border-left: 3px solid var(--active-border);
+        }
+
+        .frame-header {
+            padding: 0.75rem 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .frame-info {
+            flex: 1;
+        }
+
+        .frame-function {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: 0.25rem;
+            font-family: ui-monospace, SFMono-Regular, "SF Mono", Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+        }
+
+        .frame-location {
+            font-size: 0.75rem;
+            color: var(--text-tertiary);
+            font-family: ui-monospace, SFMono-Regular, "SF Mono", Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .frame-toggle {
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            transition: transform 0.15s ease;
+        }
+
+        .frame.active .frame-toggle {
+            transform: rotate(90deg);
+        }
+
+        .code-viewer {
+            flex: 1;
+            background: var(--bg-primary);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .code-header {
+            background: var(--bg-tertiary);
+            border-bottom: 1px solid var(--border-medium);
+            padding: 0.75rem 1.5rem;
+            font-size: 0.875rem;
+            color: var(--text-tertiary);
+            font-family: ui-monospace, SFMono-Regular, "SF Mono", Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+        }
+
+        .code-content {
+            flex: 1;
+            overflow: auto;
+            background: var(--bg-primary);
+        }
+/* 
+        .code-preview {
+            background: var(--bg-primary);
+            color: var(--text-secondary);
+            font-family: ui-monospace, SFMono-Regular, "SF Mono", Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+            font-size: 0.8rem;
+            line-height: 1.5;
+            overflow-x: auto;
+        }
+
+        .code-lines {
+            padding: 0;
+        }
+
+        .code-line {
+            display: flex;
+            min-height: 1.5rem;
+            align-items: center;
+        }
+
+        .code-line.highlight {
+            background: var(--code-line-highlight);
+            border-left: 3px solid var(--error-accent);
+        } */
+
+        .code-preview {
+  background: #0d1117;
+  border-top: 1px solid var(--border-secondary);
+  overflow-x: auto;
+}
+
+.code-lines {
+  font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, monospace;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+}
+
+.code-line {
+  display: flex!important;
+  min-height: 1.5rem !important;
+}
+
+.code-line.highlight {
+  background: var(--code-line-highlight)!important;
+  border-left: 3px solid var(--text-error)!important;
+  width: 100% !important;;
+}
+
+.line-number {
+  color: #6e7681;
+  padding: 0.5rem 1rem;
+  min-width: 4rem;
+  text-align: right;
+  user-select: none;
+  flex-shrink: 0;
+  background: #0d1117;
+  border-right: 1px solid #21262d;
+}
+
+.line-content {
+  color: #e6edf3;
+  padding: 0.5rem 1rem;
+  white-space: pre;
+  flex: 1;
+}
+
+
+        /* .line-number {
+            color: var(--text-muted);
+            padding: 0 1rem;
+            min-width: 4rem;
+            text-align: right;
+            user-select: none;
+            border-right: 1px solid var(--border-light);
+            background: var(--code-bg);
+        }
+
+        .line-content {
+            padding: 0 1rem;
+            white-space: pre;
+            flex: 1;
+        } */
+
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 400px;
+            color: var(--text-tertiary);
+            font-size: 0.875rem;
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        /* Sidebar info cards */
+        .info-section {
+            border-bottom: 1px solid var(--border-medium);
+            background: var(--bg-primary);
+        }
+
+        .info-header {
+            background: var(--bg-accent);
+            padding: 0.75rem 1rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-tertiary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .info-content {
+            padding: 1rem;
+        }
+
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 0.75rem;
+            font-size: 0.875rem;
+        }
+
+        .info-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .info-label {
+            color: var(--text-tertiary);
+            font-weight: 500;
+            min-width: 80px;
+        }
+
+        .info-value {
+            color: var(--text-primary);
+            font-weight: 600;
+            font-family: ui-monospace, SFMono-Regular, "SF Mono", Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+            font-size: 0.8rem;
+            text-align: right;
+            word-break: break-all;
+        }
+
+        .tabs {
+            display: flex;
+            background: var(--bg-tertiary);
+            border-bottom: 1px solid var(--border-medium);
+        }
+
+        .tab {
+            padding: 0.75rem 1rem;
+            cursor: pointer;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--text-tertiary);
+            border-bottom: 2px solid transparent;
+            transition: all 0.15s ease;
+            flex: 1;
+            text-align: center;
+        }
+
+        .tab:hover {
+            color: var(--text-secondary);
+        }
+
+        .tab.active {
+            color: var(--info-text);
+            border-bottom-color: var(--info-accent);
+            background: var(--bg-primary);
+        }
+
+        [x-cloak] {
+            display: none !important;
+        }
+
+        @media (max-width: 1024px) {
+            .main-content {
+                flex-direction: column;
+            }
+            
+            .sidebar {
+                width: 100%;
+                max-height: 300px;
+                order: -1;
+            }
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 1.25rem;
+            color: #6b7280;
+            cursor: pointer;
+            padding: 0.25rem;
+            line-height: 1;
+        }
+
+        .close-btn:hover {
+            color: #374151;
+        }
+    </style>
+</head>
+<body x-data="{ 
+    activeFrame: 0,
+    activeTab: 'request',
+    toggleFrame(index) { 
+        this.activeFrame = this.activeFrame === index ? -1 : index; 
+    } 
+}">
+    <div class="container">
+        <header class="header">
+            <div class="error-info">
+                <div class="error-title">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    Server Error
+                </div>
+                <div class="error-badges">
+                    <span class="badge badge-go">Go {{.GoVersion}}</span>
+                    <span class="badge badge-version">{{.OS}}/{{.Arch}}</span>
+                </div>
+            </div>
+            <!-- <button class="close-btn">×</button> -->
+        </header>
+
+        <div class="error-subtitle">{{.Error}}</div>
+
+        <main class="main-content">
+            <aside class="sidebar">
+                <div class="stack-trace-header">
+                    Stack Trace ({{len .Frames}} frames)
+                </div>
+                
+                <div class="stack-frames">
+                    {{range $i, $f := .Frames}}
+                    <div class="frame" 
+                         :class="{ 'active': activeFrame === {{$i}} }">
+                        <div class="frame-header" @click="toggleFrame({{$i}})">
+                            <div class="frame-info">
+                                <div class="frame-function">{{$f.Function}}</div>
+                                <div class="frame-location">
+                                    <i class="fas fa-file-code"></i>
+                                    <span>{{$f.File}}:{{$f.Line}}</span>
+                                </div>
+                            </div>
+                            <div class="frame-toggle">
+                                <i class="fas fa-chevron-right"></i>
+                            </div>
+                        </div>
+                    </div>
+                    {{end}}
+                </div>
+
+                <!-- Error Details -->
+                <div class="info-section">
+                    <div class="info-header">
+                        <i class="fas fa-info-circle"></i> Error Details
+                    </div>
+                    <div class="info-content">
+                        <div class="info-item">
+                            <span class="info-label">Type:</span>
+                            <span class="info-value">Panic</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Time:</span>
+                            <span class="info-value">{{.Timestamp.Format "2006-01-02 15:04:05"}}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Frames:</span>
+                            <span class="info-value">{{len .Frames}}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Request/Context Tabs -->
+                <div class="info-section">
+                    <div class="tabs">
+                        <div class="tab" :class="{ 'active': activeTab === 'request' }" @click="activeTab = 'request'">
+                            Request
+                        </div>
+                        <div class="tab" :class="{ 'active': activeTab === 'context' }" @click="activeTab = 'context'">
+                            Context
+                        </div>
+                    </div>
+                    
+                    <div class="info-content" x-show="activeTab === 'request'" x-cloak>
+                        <div class="info-item">
+                            <span class="info-label">Method:</span>
+                            <span class="info-value">{{.Method}}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">URL:</span>
+                            <span class="info-value">{{.URL}}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">User Agent:</span>
+                            <span class="info-value">{{.UserAgent}}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="info-content" x-show="activeTab === 'context'" x-cloak>
+                        <div class="info-item">
+                            <span class="info-label">Go Version:</span>
+                            <span class="info-value">go{{.GoVersion}}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">OS:</span>
+                            <span class="info-value">{{.OS}}/{{.Arch}}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Environment:</span>
+                            <span class="info-value">Development</span>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+
+            <div class="code-viewer">
+              <div class="code-header" x-show="activeFrame >= 0">
+                {{range $i, $f := .Frames}}
+                  <div x-show="activeFrame === {{$i}}">
+                    <a :href="'vscode://file/{{$f.File}}:{{$f.Line}}'" target="_blank">
+                      {{$f.File}}:{{$f.Line}}
+                    </a>
+                  </div>
+                {{end}}
+              </div>
+
+                <div class="code-content">
+                    {{range $i, $f := .Frames}}
+                    <div class="code-preview" 
+                        x-show="activeFrame === {{$i}}" 
+                        x-transition
+                        x-cloak>
+                        <div class="code-lines">
+                            {{range $lineIdx, $line := (split $f.Snippet "\n")}}
+                            {{$parsed := parseCodeLine $line}}
+                              {{if $parsed.number}}
+                                {{ if eq $parsed.highlight "true" }}
+                                  <div class="code-line highlight ">
+                                      <div class="line-number" style="color: #d13c3c;background:#fef2f2;">{{$parsed.number}}</div>
+                                      <div class="line-content ">{{$parsed.content}}</div>
+                                  </div>
+                                {{else}}
+                                      <div class="code-line">
+                                        <div class="line-number language-go ">{{$parsed.number}}</div>
+                                        <div class="line-content language-go ">{{$parsed.content}}</div>
+                                    </div>
+                                {{ end }}
+                              {{end}}
+                            {{end}}
+                        </div>
+                    </div>
+                    {{end}}
+                    
+                    <div class="empty-state" x-show="activeFrame === -1">
+                      <i class="fas fa-code"></i>
+                      <p>Select a frame to view source code</p>
+                    </div>
+                  </div>
+            </div>
+        </main>
+    </div>
+</body>
+</html>
