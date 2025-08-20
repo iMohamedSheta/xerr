@@ -79,6 +79,10 @@ func main() {
 		errorHandler.HandleError(w, r, fmt.Errorf("custom error occurred"))
 	})
 
+	mux.HandleFunc("/xerr", func(w http.ResponseWriter, r *http.Request) {
+		errorHandler.HandleError(w, r, doAction())
+	})
+
 	mux.Handle("/css/", http.StripPrefix("/css/", http.FileServer(http.Dir("assets/css"))))
 
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -90,8 +94,13 @@ func main() {
 	fmt.Println("  /        - Hello message")
 	fmt.Println("  /panic   - Trigger a panic")
 	fmt.Println("  /error   - Trigger a custom error")
+	fmt.Println("  /xerr    - Trigger a xerr error which is a custom error with stacktrace and type ex xerr.Error(...)")
 
 	if err := http.ListenAndServe(":8085", errorHandler.Middleware(mux)); err != nil {
 		fmt.Printf("Server failed to start: %v\n", err)
 	}
+}
+
+func doAction() error {
+	return xerr.Error("custom error occurred", xerr.ErrUnknown, nil)
 }

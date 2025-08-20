@@ -102,7 +102,7 @@ func TestCodeSnippetWithNonExistentFile(t *testing.T) {
 
 func TestStackFramesReturnsFrames(t *testing.T) {
 	eh := New(&Config{MaxFrames: 10, SkipFrames: 0})
-	frames := eh.stackFrames()
+	frames := eh.stackFrames(nil)
 	assert.Greater(t, len(frames), 0, "Should return at least one frame")
 	assert.NotEmpty(t, frames[0].Function)
 	assert.NotEmpty(t, frames[0].File)
@@ -171,7 +171,7 @@ func TestErrorHandler_CodeSnippet_FileBoundaries(t *testing.T) {
 
 func TestErrorHandler_StackFrames_NotEmpty(t *testing.T) {
 	eh := New(nil)
-	frames := eh.stackFrames()
+	frames := eh.stackFrames(nil)
 	assert.NotEmpty(t, frames)
 	for _, f := range frames {
 		assert.NotEmpty(t, f.Function)

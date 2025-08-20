@@ -89,7 +89,7 @@ func New(config *Config) *ErrorHandler {
 func (eh *ErrorHandler) HandleError(w http.ResponseWriter, r *http.Request, err interface{}) {
 	data := &ErrorData{
 		Error:     fmt.Sprintf("%v", err),
-		Frames:    eh.stackFrames(),
+		Frames:    eh.stackFrames(err),
 		Timestamp: time.Now(),
 		GoVersion: strings.TrimPrefix(runtime.Version(), "go"),
 		OS:        runtime.GOOS,
@@ -181,9 +181,13 @@ func codeSnippet(file string, line int) string {
 }
 
 // stackFrames extracts stack frames from the current goroutine
-func (eh *ErrorHandler) stackFrames() []Frame {
+func (eh *ErrorHandler) stackFrames(err interface{}) []Frame {
+	if xerror, ok := err.(*XErr); ok {
+		return xerror.StackTrace(eh.config.ShowSourceCode)
+	}
+
 	pcs := make([]uintptr, eh.config.MaxFrames)
-	n := runtime.Callers(eh.config.SkipFrames, pcs)
+	n := runtime.Callers(eh.config.SkipFrames-1, pcs)
 	iter := runtime.CallersFrames(pcs[:n])
 
 	var frames []Frame
