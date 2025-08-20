@@ -14,14 +14,15 @@ const (
 
 // XErr is a custom error with stack trace and type
 type XErr struct {
-	Type    ErrorType
-	Message string
-	Err     error
-	stack   []uintptr
+	Type          ErrorType
+	Message       string
+	PublicMessage string
+	Err           error
+	stack         []uintptr
 }
 
 // Error creates a new XErr with stack trace
-func Error(msg string, t ErrorType, err error) *XErr {
+func New(msg string, t ErrorType, err error) *XErr {
 	stack := make([]uintptr, 32)
 	n := runtime.Callers(2, stack[:])
 	return &XErr{
@@ -30,6 +31,12 @@ func Error(msg string, t ErrorType, err error) *XErr {
 		Err:     err,
 		stack:   stack[:n],
 	}
+}
+
+// Adds public message to the error
+func (e *XErr) WithPublicMessage(msg string) *XErr {
+	e.PublicMessage = msg
+	return e
 }
 
 func (e *XErr) Error() string {
