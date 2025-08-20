@@ -20,19 +20,19 @@ func TestDefaultConfigValues(t *testing.T) {
 }
 
 func TestNewErrorHandlerWithNilConfig(t *testing.T) {
-	eh := New(nil)
+	eh := NewErrorHandler(nil)
 	assert.NotNil(t, eh, "ErrorHandler should not be nil")
 	assert.NotNil(t, eh.tpl, "Template should be initialized")
 }
 
 func TestNewErrorHandlerWithCustomConfig(t *testing.T) {
 	cfg := &Config{ShowSourceCode: false, MaxFrames: 5}
-	eh := New(cfg)
+	eh := NewErrorHandler(cfg)
 	assert.Equal(t, cfg, eh.config, "Custom config should be applied")
 }
 
 func TestHandleErrorRendersHTML(t *testing.T) {
-	eh := New(nil)
+	eh := NewErrorHandler(nil)
 	r := httptest.NewRequest(http.MethodGet, "/test", nil)
 	w := httptest.NewRecorder()
 
@@ -46,22 +46,8 @@ func TestHandleErrorRendersHTML(t *testing.T) {
 	assert.Equal(t, "text/html; charset=utf-8", resp.Header.Get("Content-Type"))
 }
 
-func TestHandlePanicRecoversAndRenders(t *testing.T) {
-	eh := New(nil)
-	r := httptest.NewRequest(http.MethodGet, "/panic", nil)
-	w := httptest.NewRecorder()
-
-	func() {
-		defer eh.HandlePanic(w, r)
-		panic("panic test")
-	}()
-
-	body := w.Body.String()
-	assert.Contains(t, body, "panic test", "Body should contain panic message")
-}
-
 func TestMiddlewareCatchesPanic(t *testing.T) {
-	eh := New(nil)
+	eh := NewErrorHandler(nil)
 	h := eh.Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		panic("middleware panic")
 	}))
@@ -70,18 +56,6 @@ func TestMiddlewareCatchesPanic(t *testing.T) {
 	h.ServeHTTP(w, r)
 	assert.Contains(t, w.Body.String(), "middleware panic")
 }
-
-func TestMiddlewareFuncCatchesPanic(t *testing.T) {
-	eh := New(nil)
-	hf := eh.MiddlewareFunc(func(w http.ResponseWriter, r *http.Request) {
-		panic("middleware func panic")
-	})
-	r := httptest.NewRequest(http.MethodGet, "/panic", nil)
-	w := httptest.NewRecorder()
-	hf(w, r)
-	assert.Contains(t, w.Body.String(), "middleware func panic")
-}
-
 func TestCodeSnippetWithExistingFile(t *testing.T) {
 	filename := "testfile.go"
 	content := "package test\n\nfunc Test() {}\n"
@@ -89,19 +63,19 @@ func TestCodeSnippetWithExistingFile(t *testing.T) {
 	assert.NoError(t, err)
 	defer os.Remove(filename)
 
-	eh := New(nil)
+	eh := NewErrorHandler(nil)
 	snippet := eh.codeSnippet(filename, 2)
 	assert.Contains(t, snippet, "func Test() {}")
 }
 
 func TestCodeSnippetWithNonExistentFile(t *testing.T) {
-	eh := New(nil)
+	eh := NewErrorHandler(nil)
 	snippet := eh.codeSnippet("nofile.go", 1)
 	assert.Equal(t, "Could not read source file", snippet)
 }
 
 func TestStackFramesReturnsFrames(t *testing.T) {
-	eh := New(&Config{MaxFrames: 10, SkipFrames: 0})
+	eh := NewErrorHandler(&Config{MaxFrames: 10, SkipFrames: 0})
 	frames := eh.stackFrames(nil)
 	assert.Greater(t, len(frames), 0, "Should return at least one frame")
 	assert.NotEmpty(t, frames[0].Function)
@@ -131,26 +105,14 @@ func TestLenTemplateFunc(t *testing.T) {
 	assert.Equal(t, 0, lenFunc(123))
 }
 
-func TestErrorHandler_HandlePanic_WithPanic(t *testing.T) {
-	eh := New(nil)
-	r := httptest.NewRequest("GET", "/", nil)
-	rw := httptest.NewRecorder()
-	func() {
-		defer eh.HandlePanic(rw, r)
-		panic("panic test")
-	}()
-	assert.Equal(t, http.StatusInternalServerError, rw.Code)
-	assert.Contains(t, rw.Body.String(), "panic test")
-}
-
 func TestErrorHandler_CodeSnippet_DisabledSource(t *testing.T) {
-	eh := New(&Config{ShowSourceCode: false})
+	eh := NewErrorHandler(&Config{ShowSourceCode: false})
 	snippet := eh.codeSnippet("anyfile.go", 10)
 	assert.Equal(t, "Source code display disabled", snippet)
 }
 
 func TestErrorHandler_CodeSnippet_FileDoesNotExist(t *testing.T) {
-	eh := New(nil)
+	eh := NewErrorHandler(nil)
 	snippet := eh.codeSnippet("nonexistent.go", 10)
 	assert.Equal(t, "Could not read source file", snippet)
 }
@@ -162,7 +124,7 @@ func TestErrorHandler_CodeSnippet_FileBoundaries(t *testing.T) {
 	assert.NoError(t, err)
 	defer os.Remove(filename)
 
-	eh := New(nil)
+	eh := NewErrorHandler(nil)
 	snippet := eh.codeSnippet(filename, 1)
 	assert.Contains(t, snippet, "line1")
 	snippetEnd := eh.codeSnippet(filename, 3)
@@ -170,7 +132,7 @@ func TestErrorHandler_CodeSnippet_FileBoundaries(t *testing.T) {
 }
 
 func TestErrorHandler_StackFrames_NotEmpty(t *testing.T) {
-	eh := New(nil)
+	eh := NewErrorHandler(nil)
 	frames := eh.stackFrames(nil)
 	assert.NotEmpty(t, frames)
 	for _, f := range frames {
@@ -180,7 +142,7 @@ func TestErrorHandler_StackFrames_NotEmpty(t *testing.T) {
 }
 
 func TestMiddleware_CallsNextHandler(t *testing.T) {
-	eh := New(nil)
+	eh := NewErrorHandler(nil)
 	called := false
 	next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { called = true })
 	rw := httptest.NewRecorder()
@@ -190,21 +152,11 @@ func TestMiddleware_CallsNextHandler(t *testing.T) {
 }
 
 func TestMiddleware_PanicRecovery(t *testing.T) {
-	eh := New(nil)
+	eh := NewErrorHandler(nil)
 	next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { panic("handler panic") })
 	rw := httptest.NewRecorder()
 	req := httptest.NewRequest("GET", "/", nil)
 	eh.Middleware(next).ServeHTTP(rw, req)
 	assert.Equal(t, http.StatusInternalServerError, rw.Code)
 	assert.Contains(t, rw.Body.String(), "handler panic")
-}
-
-func TestMiddlewareFunc_PanicRecovery(t *testing.T) {
-	eh := New(nil)
-	next := func(w http.ResponseWriter, r *http.Request) { panic("func panic") }
-	rw := httptest.NewRecorder()
-	req := httptest.NewRequest("GET", "/", nil)
-	eh.MiddlewareFunc(next)(rw, req)
-	assert.Equal(t, http.StatusInternalServerError, rw.Code)
-	assert.Contains(t, rw.Body.String(), "func panic")
 }

@@ -29,7 +29,7 @@ func TestAs_NormalError(t *testing.T) {
 }
 
 func TestAs_XErrWithoutTypes(t *testing.T) {
-	err := xerr.Error("missing item", TypeNotFound, nil)
+	err := xerr.New("missing item", TypeNotFound, nil)
 	var target *xerr.XErr
 	ok := xerr.As(err, &target)
 	assert.True(t, ok, "As should return true for *XErr with no type filtering")
@@ -37,7 +37,7 @@ func TestAs_XErrWithoutTypes(t *testing.T) {
 }
 
 func TestAs_XErrWithMatchingType(t *testing.T) {
-	err := xerr.Error("invalid input", TypeInvalid, nil)
+	err := xerr.New("invalid input", TypeInvalid, nil)
 	var target *xerr.XErr
 	ok := xerr.As(err, &target, TypeInvalid, TypeNotFound)
 	assert.True(t, ok, "As should return true when type matches")
@@ -45,7 +45,7 @@ func TestAs_XErrWithMatchingType(t *testing.T) {
 }
 
 func TestAs_XErrWithNonMatchingType(t *testing.T) {
-	err := xerr.Error("missing item", TypeNotFound, nil)
+	err := xerr.New("missing item", TypeNotFound, nil)
 	var target *xerr.XErr
 	ok := xerr.As(err, &target, TypeInvalid)
 

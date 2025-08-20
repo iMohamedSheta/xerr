@@ -18,7 +18,7 @@ func ExampleMiddleware() {
 		Environment:    "production",
 		DebugMode:      false,
 	}
-	errorHandler := xerr.New(config)
+	errorHandler := xerr.NewErrorHandler(config)
 
 	// Use as middleware
 	mux := http.NewServeMux()
@@ -31,7 +31,7 @@ func ExampleMiddleware() {
 
 // Example handling errors manually
 func ExampleManualError() {
-	errorHandler := xerr.New(nil) // Use default config
+	errorHandler := xerr.NewErrorHandler(nil) // Use default config
 
 	http.HandleFunc("/api/users", func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
@@ -48,7 +48,7 @@ func ExampleManualError() {
 
 // Example with custom error types
 func ExampleCustomError() {
-	errorHandler := xerr.New(nil)
+	errorHandler := xerr.NewErrorHandler(nil)
 
 	http.HandleFunc("/api/data", func(w http.ResponseWriter, r *http.Request) {
 		// Handle specific errors
@@ -68,7 +68,7 @@ func someOperation() error {
 // Example main function showing different usage patterns
 func main() {
 	// Method 1: Simple middleware usage
-	errorHandler := xerr.New(xerr.DefaultConfig())
+	errorHandler := xerr.NewErrorHandler(xerr.DefaultConfig())
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/panic", func(w http.ResponseWriter, r *http.Request) {
@@ -102,5 +102,5 @@ func main() {
 }
 
 func doAction() error {
-	return xerr.Error("custom error occurred", xerr.ErrUnknown, nil)
+	return xerr.New("custom error occurred", xerr.ErrUnknown, nil)
 }

@@ -1,31 +1,46 @@
 # xerr
 
-`xerr` is a Go package that displays detailed error pages for web applications. It captures errors and panics and renders an HTML page with stack traces, code snippets, and request information.
+`xerr` is a Go package for structured error handling and developer-friendly error pages. It provides:
+
+* **Custom error type (`XErr`)** with stack trace support
+* **Error classification** via `ErrorType` (built-in and custom)
+* **Public messages** (safe for end-users)
+* **Detailed HTML error pages** (with stack frames, code snippets, and request info)
+* **Middleware** for integration with Go’s `http.Handler`
 
 ![Error Page Example](assets/images/screenshot1.png)
 
+---
+
 ## Features
 
-- Captures panics in HTTP handlers
-- Middleware for integration with Go's `http.Handler` or `http.HandlerFunc`
-- Displays stack frames and code snippets (configurable)
-- Shows Go version, OS, architecture, and request details
-- Customizable configuration:
-  - `ShowSourceCode` (bool)
-  - `MaxFrames` (int)
-  - `Environment` (string)
-  - `DebugMode` (bool)
-  - `SkipFrames` (int)
+* Capture **panics** in HTTP handlers
+* Middleware for `http.Handler` and `http.HandlerFunc`
+* Stack frames with optional code snippets
+* Go version, OS, architecture, and request details
+* Configurable behavior:
+
+  * `ShowSourceCode` (bool)
+  * `MaxFrames` (int)
+  * `Environment` (string)
+  * `DebugMode` (bool)
+  * `SkipFrames` (int)
+* Works with `errors.Is` / `errors.As`
+* Custom error types outside the package
+
+---
 
 ## Installation
 
 ```bash
 go get github.com/iMohamedSheta/xerr
-````
+```
+
+---
 
 ## Usage
 
-### Handle a panic in an HTTP handler
+### Panic recovery with middleware
 
 ```go
 package main
@@ -36,52 +51,96 @@ import (
 )
 
 func main() {
-    eh := xerr.New(nil) // default configuration
+    eh := xerr.NewErrorHandler(xerr.DefaultConfig())
 
-    http.HandleFunc("/", eh.MiddlewareFunc(func(w http.ResponseWriter, r *http.Request) {
+    mux := http.NewServeMux()
+    mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
         panic("Something went wrong!")
-    }))
+    })
 
-    http.ListenAndServe(":8080", nil)
+    http.ListenAndServe(":8080", eh.Middleware(mux))
 }
 ```
 
-### Use Middleware with a router
+---
+
+### Handle errors manually
 
 ```go
-mux := http.NewServeMux()
-mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-    panic("Oops!")
-})
+eh := xerr.NewErrorHandler(nil)
 
-eh := xerr.New(nil)
-http.ListenAndServe(":8080", eh.Middleware(mux))
+http.HandleFunc("/api", func(w http.ResponseWriter, r *http.Request) {
+    if err := doSomething(); err != nil {
+        eh.HandleError(w, r, err)
+        return
+    }
+    w.Write([]byte("OK"))
+})
 ```
 
-### Custom Configuration
+---
+
+### Custom error types
 
 ```go
-config := &xerr.Config{
-    ShowSourceCode: false,
-    MaxFrames:      10,
+const (
+    ErrPaymentFailed xerr.ErrorType = iota + 1000
+    ErrRateLimited
+)
+
+func main() {
+    err := xerr.New("credit card declined", ErrPaymentFailed, nil).
+        WithPublicMessage("Payment could not be processed")
+
+    if xerr.As(err, new(*xerr.XErr), ErrPaymentFailed) {
+        // handle specific type
+    }
+}
+```
+
+---
+
+### Configuration
+
+```go
+cfg := &xerr.Config{
+    ShowSourceCode: true,
+    MaxFrames:      20,
     Environment:    "production",
     DebugMode:      false,
-    SkipFrames:     3,
+    SkipFrames:     2,
 }
-eh := xerr.New(config)
+eh := xerr.NewErrorHandler(cfg)
 ```
+
+---
 
 ## Functions
 
-* `xerr.New(config *Config) *ErrorHandler` – Create a new error handler
-* `(*ErrorHandler) HandleError(w http.ResponseWriter, r *http.Request, err interface{})` – Render an error page
-* `(*ErrorHandler) HandlePanic(w http.ResponseWriter, r *http.Request)` – Recover from panic in HTTP handlers
-* `(*ErrorHandler) Middleware(next http.Handler) http.Handler` – HTTP middleware
-* `(*ErrorHandler) MiddlewareFunc(next http.HandlerFunc) http.HandlerFunc` – HTTP middleware function
+* `xerr.New(msg string, typ ErrorType, cause error) *XErr` – Create new error
+
+* `(*XErr) WithPublicMessage(msg string) *XErr` – Attach safe message for users
+
+* `(*XErr) StackTrace(withSnippets bool) []Frame` – Get stack trace
+
+* `xerr.As(err error, target **XErr, types ...ErrorType) bool` – Type-aware `errors.As` and can also check ErrorType if there is for classification
+
+* `xerr.NewErrorHandler(cfg *Config) *ErrorHandler` – Error page handler
+
+* `xerr.DefaultConfig() *Config` – Get default configuration
+
+* `(*ErrorHandler) HandleError(w, r, err)` – Render error page
+
+* `(*ErrorHandler) Middleware(next http.Handler)` – Panic-safe middleware
+
+---
 
 ## Template
 
-The default template is `assets/templates/error.html`. You can customize it to fit your needs.
+Default template: `assets/templates/error.html`
+You can fully customize it to match your app’s design.
+
+---
 
 ## License
 

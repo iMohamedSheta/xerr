@@ -12,7 +12,7 @@ import (
 
 // TestErrorCreation ensures that creating a new XErr sets fields correctly
 func TestErrorCreation(t *testing.T) {
-	err := xerr.Error("invalid input", xerr.ErrUnknown, nil)
+	err := xerr.New("invalid input", xerr.ErrUnknown, nil)
 
 	require.NotNil(t, err)
 	assert.Equal(t, xerr.ErrUnknown, err.Type)
@@ -23,7 +23,7 @@ func TestErrorCreation(t *testing.T) {
 // TestErrorWrapping ensures that wrapping another error works with Unwrap()
 func TestErrorWrapping(t *testing.T) {
 	base := errors.New("database failed")
-	err := xerr.Error("could not save user", xerr.ErrUnknown, base)
+	err := xerr.New("could not save user", xerr.ErrUnknown, base)
 
 	require.NotNil(t, err)
 	assert.Equal(t, base, err.Unwrap())
@@ -34,7 +34,7 @@ func TestErrorWrapping(t *testing.T) {
 // TestErrorAsIs ensures errors.As and errors.Is work properly
 func TestErrorAsIs(t *testing.T) {
 	base := errors.New("record missing")
-	err := xerr.Error("user not found", xerr.ErrUnknown, base)
+	err := xerr.New("user not found", xerr.ErrUnknown, base)
 
 	var target *xerr.XErr
 	require.True(t, errors.As(err, &target))
@@ -45,7 +45,7 @@ func TestErrorAsIs(t *testing.T) {
 
 // TestStackTraceContainsFunction ensures stack trace contains the current function name
 func TestStackTraceContainsFunction(t *testing.T) {
-	err := xerr.Error("something broke", xerr.ErrUnknown, nil)
+	err := xerr.New("something broke", xerr.ErrUnknown, nil)
 	frames := err.StackTrace(false)
 
 	require.NotEmpty(t, frames)
@@ -61,7 +61,7 @@ func TestStackTraceContainsFunction(t *testing.T) {
 
 // TestStackTraceWithSnippet ensures stack trace includes snippets when enabled
 func TestStackTraceWithSnippet(t *testing.T) {
-	err := xerr.Error("snippet test", xerr.ErrUnknown, nil)
+	err := xerr.New("snippet test", xerr.ErrUnknown, nil)
 	frames := err.StackTrace(true)
 
 	require.NotEmpty(t, frames)
@@ -83,7 +83,7 @@ const (
 
 // TestBuiltinErrorType ensures built-in error type works
 func TestBuiltinErrorType(t *testing.T) {
-	err := xerr.Error("something went wrong", xerr.ErrUnknown, nil)
+	err := xerr.New("something went wrong", xerr.ErrUnknown, nil)
 
 	require.NotNil(t, err)
 	assert.Equal(t, xerr.ErrUnknown, err.Type)
@@ -92,8 +92,8 @@ func TestBuiltinErrorType(t *testing.T) {
 
 // TestCustomErrorTypes ensures custom error types can be created outside the package
 func TestCustomErrorTypes(t *testing.T) {
-	paymentErr := xerr.Error("credit card declined", ErrPaymentFailed, nil)
-	rateLimitErr := xerr.Error("too many requests", ErrRateLimited, nil)
+	paymentErr := xerr.New("credit card declined", ErrPaymentFailed, nil)
+	rateLimitErr := xerr.New("too many requests", ErrRateLimited, nil)
 
 	require.NotNil(t, paymentErr)
 	require.NotNil(t, rateLimitErr)
@@ -108,11 +108,32 @@ func TestCustomErrorTypes(t *testing.T) {
 // TestWrappedErrorWithCustomType ensures custom error types still work with wrapping
 func TestWrappedErrorWithCustomType(t *testing.T) {
 	base := errors.New("db timeout")
-	err := xerr.Error("failed to charge user", ErrPaymentFailed, base)
+	err := xerr.New("failed to charge user", ErrPaymentFailed, base)
 
 	require.NotNil(t, err)
 	assert.Equal(t, ErrPaymentFailed, err.Type)
 	assert.Contains(t, err.Error(), "failed to charge user")
 	assert.Contains(t, err.Error(), "db timeout")
 	assert.Equal(t, base, err.Unwrap())
+}
+
+// TestWithPublicMessageError ensures setting the custom public messages to error
+func TestWithPublicMessageError(t *testing.T) {
+	paymentPubMsg := "this is public message for credit card decline"
+	rateLimitPubMsg := "this is public message fro too many requests"
+
+	paymentErr := xerr.New("credit card declined", ErrPaymentFailed, nil).WithPublicMessage(paymentPubMsg)
+	rateLimitErr := xerr.New("too many requests", ErrRateLimited, nil).WithPublicMessage(rateLimitPubMsg)
+
+	require.NotNil(t, paymentErr)
+	require.NotNil(t, rateLimitErr)
+
+	assert.Equal(t, ErrPaymentFailed, paymentErr.Type)
+	assert.Equal(t, "credit card declined", paymentErr.Error())
+
+	assert.Equal(t, paymentPubMsg, paymentErr.PublicMessage)
+	assert.Equal(t, rateLimitPubMsg, rateLimitErr.PublicMessage)
+
+	assert.Equal(t, ErrRateLimited, rateLimitErr.Type)
+	assert.Equal(t, "too many requests", rateLimitErr.Error())
 }

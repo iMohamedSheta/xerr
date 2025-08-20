@@ -70,7 +70,7 @@ type ErrorHandler struct {
 }
 
 // New creates a new ErrorHandler with the given configuration
-func New(config *Config) *ErrorHandler {
+func NewErrorHandler(config *Config) *ErrorHandler {
 	if config == nil {
 		config = DefaultConfig()
 	}
@@ -112,13 +112,6 @@ func (eh *ErrorHandler) HandleError(w http.ResponseWriter, r *http.Request, err 
 	}
 }
 
-// HandlePanic is a convenience method for handling panics in HTTP handlers
-func (eh *ErrorHandler) HandlePanic(w http.ResponseWriter, r *http.Request) {
-	if rec := recover(); rec != nil {
-		eh.HandleError(w, r, rec)
-	}
-}
-
 // Middleware returns an HTTP middleware that catches panics and renders error pages
 func (eh *ErrorHandler) Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -129,18 +122,6 @@ func (eh *ErrorHandler) Middleware(next http.Handler) http.Handler {
 		}()
 		next.ServeHTTP(w, r)
 	})
-}
-
-// MiddlewareFunc returns an HTTP middleware function that catches panics and renders error pages
-func (eh *ErrorHandler) MiddlewareFunc(next http.HandlerFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		defer func() {
-			if rec := recover(); rec != nil {
-				eh.HandleError(w, r, rec)
-			}
-		}()
-		next(w, r)
-	}
 }
 
 // codeSnippet extracts a code snippet around the given line in the file
