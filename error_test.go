@@ -1,0 +1,118 @@
+package xerr_test
+
+import (
+	"errors"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
+	"github.com/iMohamedSheta/xerr"
+)
+
+// TestErrorCreation ensures that creating a new XErr sets fields correctly
+func TestErrorCreation(t *testing.T) {
+	err := xerr.Error("invalid input", xerr.ErrUnknown, nil)
+
+	require.NotNil(t, err)
+	assert.Equal(t, xerr.ErrUnknown, err.Type)
+	assert.Equal(t, "invalid input", err.Message)
+	assert.Nil(t, err.Unwrap())
+}
+
+// TestErrorWrapping ensures that wrapping another error works with Unwrap()
+func TestErrorWrapping(t *testing.T) {
+	base := errors.New("database failed")
+	err := xerr.Error("could not save user", xerr.ErrUnknown, base)
+
+	require.NotNil(t, err)
+	assert.Equal(t, base, err.Unwrap())
+	assert.Contains(t, err.Error(), "could not save user")
+	assert.Contains(t, err.Error(), "database failed")
+}
+
+// TestErrorAsIs ensures errors.As and errors.Is work properly
+func TestErrorAsIs(t *testing.T) {
+	base := errors.New("record missing")
+	err := xerr.Error("user not found", xerr.ErrUnknown, base)
+
+	var target *xerr.XErr
+	require.True(t, errors.As(err, &target))
+	assert.Equal(t, xerr.ErrUnknown, target.Type)
+
+	assert.True(t, errors.Is(err, base))
+}
+
+// TestStackTraceContainsFunction ensures stack trace contains the current function name
+func TestStackTraceContainsFunction(t *testing.T) {
+	err := xerr.Error("something broke", xerr.ErrUnknown, nil)
+	frames := err.StackTrace(false)
+
+	require.NotEmpty(t, frames)
+	found := false
+	for _, f := range frames {
+		if f.Function != "" && f.File != "" && f.Line > 0 {
+			found = true
+			break
+		}
+	}
+	assert.True(t, found, "expected at least one valid frame in stack trace")
+}
+
+// TestStackTraceWithSnippet ensures stack trace includes snippets when enabled
+func TestStackTraceWithSnippet(t *testing.T) {
+	err := xerr.Error("snippet test", xerr.ErrUnknown, nil)
+	frames := err.StackTrace(true)
+
+	require.NotEmpty(t, frames)
+	foundSnippet := false
+	for _, f := range frames {
+		if f.Snippet != "" {
+			foundSnippet = true
+			break
+		}
+	}
+	assert.True(t, foundSnippet, "expected at least one frame to contain a snippet")
+}
+
+// Define custom error types outside the xerr package
+const (
+	ErrPaymentFailed xerr.ErrorType = iota + 1000
+	ErrRateLimited
+)
+
+// TestBuiltinErrorType ensures built-in error type works
+func TestBuiltinErrorType(t *testing.T) {
+	err := xerr.Error("something went wrong", xerr.ErrUnknown, nil)
+
+	require.NotNil(t, err)
+	assert.Equal(t, xerr.ErrUnknown, err.Type)
+	assert.Equal(t, "something went wrong", err.Error())
+}
+
+// TestCustomErrorTypes ensures custom error types can be created outside the package
+func TestCustomErrorTypes(t *testing.T) {
+	paymentErr := xerr.Error("credit card declined", ErrPaymentFailed, nil)
+	rateLimitErr := xerr.Error("too many requests", ErrRateLimited, nil)
+
+	require.NotNil(t, paymentErr)
+	require.NotNil(t, rateLimitErr)
+
+	assert.Equal(t, ErrPaymentFailed, paymentErr.Type)
+	assert.Equal(t, "credit card declined", paymentErr.Error())
+
+	assert.Equal(t, ErrRateLimited, rateLimitErr.Type)
+	assert.Equal(t, "too many requests", rateLimitErr.Error())
+}
+
+// TestWrappedErrorWithCustomType ensures custom error types still work with wrapping
+func TestWrappedErrorWithCustomType(t *testing.T) {
+	base := errors.New("db timeout")
+	err := xerr.Error("failed to charge user", ErrPaymentFailed, base)
+
+	require.NotNil(t, err)
+	assert.Equal(t, ErrPaymentFailed, err.Type)
+	assert.Contains(t, err.Error(), "failed to charge user")
+	assert.Contains(t, err.Error(), "db timeout")
+	assert.Equal(t, base, err.Unwrap())
+}

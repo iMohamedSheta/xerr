@@ -48,6 +48,7 @@ type Config struct {
 	Environment    string // Environment name (development, production, etc.)
 	DebugMode      bool   // Whether debug mode is enabled
 	SkipFrames     int    // Number of frames to skip from the top
+	SkipLibrary    bool   // Whether to skip the library frames
 }
 
 // DefaultConfig returns a default configuration
@@ -58,6 +59,7 @@ func DefaultConfig() *Config {
 		Environment:    "development",
 		DebugMode:      true,
 		SkipFrames:     2, // Skip the panic, recover, and this function
+		SkipLibrary:    false,
 	}
 }
 
@@ -147,6 +149,11 @@ func (eh *ErrorHandler) codeSnippet(file string, line int) string {
 		return "Source code display disabled"
 	}
 
+	return codeSnippet(file, line)
+}
+
+// codeSnippet extracts a few lines around the error line
+func codeSnippet(file string, line int) string {
 	data, err := os.ReadFile(file)
 	if err != nil {
 		return "Could not read source file"
@@ -176,7 +183,7 @@ func (eh *ErrorHandler) codeSnippet(file string, line int) string {
 // stackFrames extracts stack frames from the current goroutine
 func (eh *ErrorHandler) stackFrames() []Frame {
 	pcs := make([]uintptr, eh.config.MaxFrames)
-	n := runtime.Callers(eh.config.SkipFrames+1, pcs)
+	n := runtime.Callers(eh.config.SkipFrames, pcs)
 	iter := runtime.CallersFrames(pcs[:n])
 
 	var frames []Frame
@@ -184,13 +191,18 @@ func (eh *ErrorHandler) stackFrames() []Frame {
 		fr, more := iter.Next()
 		if fr.File != "" {
 			// Skip standard library and module cache files
-			if strings.Contains(fr.File, "/go/src/") || strings.Contains(fr.File, "/pkg/mod/") {
-				if !more {
-					break
+			if eh.config.SkipLibrary {
+				if strings.Contains(fr.File, "/iMohamedSheta/xerr/") ||
+					strings.Contains(fr.File, "/pkg/mod/") ||
+					strings.Contains(fr.File, "/vendor/") ||
+					strings.Contains(fr.File, "net/http") ||
+					strings.Contains(fr.File, "runtime/") {
+					if !more {
+						break
+					}
+					continue
 				}
-				continue
 			}
-
 			frame := Frame{
 				Function: fr.Function,
 				File:     fr.File,
