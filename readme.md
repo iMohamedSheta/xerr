@@ -92,7 +92,8 @@ func main() {
     err := xerr.New("credit card declined", ErrPaymentFailed, nil).
         WithPublicMessage("Payment could not be processed")
 
-    if xerr.As(err, new(*xerr.XErr), ErrPaymentFailed) {
+    var xe *xerr.XErr
+    if errors.As(err, &xe) && xe.IsType(ErrPaymentFailed) {
         // handle specific type
     }
 }
@@ -109,6 +110,7 @@ cfg := &xerr.Config{
     Environment:    "production",
     DebugMode:      false,
     SkipFrames:     2,
+    SkipLibrary:    false,
 }
 eh := xerr.NewErrorHandler(cfg)
 ```
@@ -123,7 +125,7 @@ eh := xerr.NewErrorHandler(cfg)
 
 * `(*XErr) StackTrace(withSnippets bool) []Frame` – Get stack trace
 
-* `xerr.As(err error, target **XErr, types ...ErrorType) bool` – Type-aware `errors.As` and can also check ErrorType if there is for classification
+* `(*XErr) IsType(types ...ErrorType) bool` – Check if error matches any of the specified types
 
 * `xerr.NewErrorHandler(cfg *Config) *ErrorHandler` – Error page handler
 
