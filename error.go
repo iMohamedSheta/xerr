@@ -19,6 +19,7 @@ type XErr struct {
 	PublicMessage string
 	Err           error
 	stack         []uintptr
+	Details       map[string]any
 }
 
 // Error creates a new XErr with stack trace
@@ -36,6 +37,12 @@ func New(msg string, t ErrorType, err error) *XErr {
 // Adds public message to the error
 func (e *XErr) WithPublicMessage(msg string) *XErr {
 	e.PublicMessage = msg
+	return e
+}
+
+// Adds details to the error
+func (e *XErr) WithDetails(details map[string]any) *XErr {
+	e.Details = details
 	return e
 }
 

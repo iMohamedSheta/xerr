@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 
 	"github.com/iMohamedSheta/xerr"
 )
@@ -14,7 +13,7 @@ import (
 func TestErrorCreation(t *testing.T) {
 	err := xerr.New("invalid input", xerr.ErrUnknown, nil)
 
-	require.NotNil(t, err)
+	assert.NotNil(t, err)
 	assert.Equal(t, xerr.ErrUnknown, err.Type)
 	assert.Equal(t, "invalid input", err.Message)
 	assert.Nil(t, err.Unwrap())
@@ -25,7 +24,7 @@ func TestErrorWrapping(t *testing.T) {
 	base := errors.New("database failed")
 	err := xerr.New("could not save user", xerr.ErrUnknown, base)
 
-	require.NotNil(t, err)
+	assert.NotNil(t, err)
 	assert.Equal(t, base, err.Unwrap())
 	assert.Contains(t, err.Error(), "could not save user")
 	assert.Contains(t, err.Error(), "database failed")
@@ -37,7 +36,7 @@ func TestErrorAsIs(t *testing.T) {
 	err := xerr.New("user not found", xerr.ErrUnknown, base)
 
 	var target *xerr.XErr
-	require.True(t, errors.As(err, &target))
+	assert.True(t, errors.As(err, &target))
 	assert.Equal(t, xerr.ErrUnknown, target.Type)
 
 	assert.True(t, errors.Is(err, base))
@@ -48,7 +47,7 @@ func TestStackTraceContainsFunction(t *testing.T) {
 	err := xerr.New("something broke", xerr.ErrUnknown, nil)
 	frames := err.StackTrace(false)
 
-	require.NotEmpty(t, frames)
+	assert.NotEmpty(t, frames)
 	found := false
 	for _, f := range frames {
 		if f.Function != "" && f.File != "" && f.Line > 0 {
@@ -64,7 +63,7 @@ func TestStackTraceWithSnippet(t *testing.T) {
 	err := xerr.New("snippet test", xerr.ErrUnknown, nil)
 	frames := err.StackTrace(true)
 
-	require.NotEmpty(t, frames)
+	assert.NotEmpty(t, frames)
 	foundSnippet := false
 	for _, f := range frames {
 		if f.Snippet != "" {
@@ -85,7 +84,7 @@ const (
 func TestBuiltinErrorType(t *testing.T) {
 	err := xerr.New("something went wrong", xerr.ErrUnknown, nil)
 
-	require.NotNil(t, err)
+	assert.NotNil(t, err)
 	assert.Equal(t, xerr.ErrUnknown, err.Type)
 	assert.Equal(t, "something went wrong", err.Error())
 }
@@ -95,8 +94,8 @@ func TestCustomErrorTypes(t *testing.T) {
 	paymentErr := xerr.New("credit card declined", ErrPaymentFailed, nil)
 	rateLimitErr := xerr.New("too many requests", ErrRateLimited, nil)
 
-	require.NotNil(t, paymentErr)
-	require.NotNil(t, rateLimitErr)
+	assert.NotNil(t, paymentErr)
+	assert.NotNil(t, rateLimitErr)
 
 	assert.Equal(t, ErrPaymentFailed, paymentErr.Type)
 	assert.Equal(t, "credit card declined", paymentErr.Error())
@@ -110,7 +109,7 @@ func TestWrappedErrorWithCustomType(t *testing.T) {
 	base := errors.New("db timeout")
 	err := xerr.New("failed to charge user", ErrPaymentFailed, base)
 
-	require.NotNil(t, err)
+	assert.NotNil(t, err)
 	assert.Equal(t, ErrPaymentFailed, err.Type)
 	assert.Contains(t, err.Error(), "failed to charge user")
 	assert.Contains(t, err.Error(), "db timeout")
@@ -125,8 +124,8 @@ func TestWithPublicMessageError(t *testing.T) {
 	paymentErr := xerr.New("credit card declined", ErrPaymentFailed, nil).WithPublicMessage(paymentPubMsg)
 	rateLimitErr := xerr.New("too many requests", ErrRateLimited, nil).WithPublicMessage(rateLimitPubMsg)
 
-	require.NotNil(t, paymentErr)
-	require.NotNil(t, rateLimitErr)
+	assert.NotNil(t, paymentErr)
+	assert.NotNil(t, rateLimitErr)
 
 	assert.Equal(t, ErrPaymentFailed, paymentErr.Type)
 	assert.Equal(t, "credit card declined", paymentErr.Error())
@@ -136,4 +135,32 @@ func TestWithPublicMessageError(t *testing.T) {
 
 	assert.Equal(t, ErrRateLimited, rateLimitErr.Type)
 	assert.Equal(t, "too many requests", rateLimitErr.Error())
+}
+
+// TestXErrWithDetailsPublicMessage ensures XErr correctly stores Details and PublicMessage
+func TestXErrWithDetailsPublicMessage(t *testing.T) {
+	assert := assert.New(t)
+
+	details := map[string]any{
+		"email":    "Email is assertd",
+		"password": "Password must be at least 6 characters",
+	}
+	publicMsg := "Some fields are invalid. Please check your input."
+
+	baseErr := errors.New("base error")
+
+	xe := xerr.New("Validation failed", xerr.ErrUnknown, baseErr).
+		WithDetails(details).
+		WithPublicMessage(publicMsg)
+
+	assert.NotNil(xe)
+	assert.Equal(xerr.ErrUnknown, xe.Type)
+	assert.Equal("Validation failed - base error", xe.Error())
+
+	assert.Equal(publicMsg, xe.PublicMessage)
+
+	assert.Equal(details, xe.Details)
+
+	newXE := xe.WithDetails(details)
+	assert.Equal(xe, newXE)
 }
