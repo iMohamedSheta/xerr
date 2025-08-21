@@ -11,7 +11,7 @@ func (err *XErr) IsType(types ...ErrorType) bool {
 		return false
 	}
 
-	if types == nil || len(types) == 0 {
+	if len(types) == 0 {
 		return true
 	}
 
