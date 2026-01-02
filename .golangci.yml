@@ -1,15 +1,21 @@
-version: "2"
-
 run:
-  exclude-dirs:
-    - examples
+  timeout: 5m
 
 linters:
   enable:
     - errcheck
+    - gofmt
+    - goimports
+    - govet
+    - ineffassign
+    - staticcheck
+    - unused
 
-  exclusions:
-    rules:
-      - path: _test\.go
-        linters:
-          - errcheck
+issues:
+  exclude-rules:
+    - path: examples/
+      linters:
+        - errcheck
+    - path: _test\.go
+      linters:
+        - errcheck
