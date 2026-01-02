@@ -119,7 +119,7 @@ func (eh *ErrorHandler) HandleError(w http.ResponseWriter, r *http.Request, err 
 
 	if renderErr := eh.tpl.ExecuteTemplate(w, execTemplate, data); renderErr != nil {
 		// Fallback to plain text if template rendering fails
-		fmt.Fprintf(w, "Error: %v\n\nTemplate rendering failed: %v", err, renderErr)
+		_, _ = fmt.Fprintf(w, "Error: %v\n\nTemplate rendering failed: %v", err, renderErr)
 	}
 }
 
