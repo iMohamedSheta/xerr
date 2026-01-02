@@ -1,22 +1,20 @@
 package xerr
 
 import (
+	"embed"
 	"fmt"
 	"html/template"
 	"net/http"
 	"os"
-	"path/filepath"
 	"runtime"
 	"strings"
 	"time"
 )
 
-// HTML templates for the error page
-var errorTemplate = []string{
-	filepath.Join(packageRoot(), "assets", "templates", "error.html"),
-}
+//go:embed assets/templates/*.html
+var templatesFS embed.FS
 
-// the executed template to show the error page
+// the executed template name
 const execTemplate = "error.html"
 
 // Frame represents a single stack frame
@@ -49,6 +47,7 @@ type Config struct {
 	DebugMode      bool   // Whether debug mode is enabled
 	SkipFrames     int    // Number of frames to skip from the top
 	SkipLibrary    bool   // Whether to skip the library frames
+	TemplatePath   string // Path to custom template file (optional)
 }
 
 // DefaultConfig returns a default configuration
@@ -60,6 +59,7 @@ func DefaultConfig() *Config {
 		DebugMode:      true,
 		SkipFrames:     2, // Skip the panic, recover, and this function
 		SkipLibrary:    false,
+		TemplatePath:   "", // Empty means use embedded template
 	}
 }
 
@@ -69,15 +69,26 @@ type ErrorHandler struct {
 	tpl    *template.Template
 }
 
-// New creates a new ErrorHandler with the given configuration
+// NewErrorHandler creates a new ErrorHandler with the given configuration
 func NewErrorHandler(config *Config) *ErrorHandler {
 	if config == nil {
 		config = DefaultConfig()
 	}
 
-	tpl := template.Must(
-		template.New("error").Funcs(templateFuncs).ParseFiles(errorTemplate...),
-	)
+	var tpl *template.Template
+	var err error
+
+	// Use custom template if provided, otherwise use embedded template
+	if config.TemplatePath != "" {
+		tpl, err = template.New(execTemplate).Funcs(templateFuncs).ParseFiles(config.TemplatePath)
+		if err != nil {
+			panic(fmt.Sprintf("failed to parse custom template: %v", err))
+		}
+	} else {
+		tpl = template.Must(
+			template.New("").Funcs(templateFuncs).ParseFS(templatesFS, "assets/templates/*.html"),
+		)
+	}
 
 	return &ErrorHandler{
 		config: config,
@@ -253,9 +264,4 @@ var templateFuncs = template.FuncMap{
 			return 0
 		}
 	},
-}
-
-func packageRoot() string {
-	_, file, _, _ := runtime.Caller(0) // path to this source file
-	return filepath.Dir(file)
 }
