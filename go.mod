@@ -1,6 +1,6 @@
 module github.com/iMohamedSheta/xerr
 
-go 1.25.5
+go 1.24.11
 
 require github.com/stretchr/testify v1.10.0
 
